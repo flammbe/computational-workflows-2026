@@ -26,6 +26,7 @@ workflow{
     // Task 1 - Create a channel that enumerates the numbers from 1 to 10
 
     if (params.step == 1) {
+        out_ch = channel.interval('1s').until{v -> v == 11}
 
     }
 
