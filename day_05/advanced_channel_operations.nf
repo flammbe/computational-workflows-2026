@@ -9,7 +9,8 @@ workflow{
 
     if (params.step == 1) {
         channel.fromPath('samplesheet.csv')
-            // ...
+            .splitCsv( header: true )
+            .view{row -> "${row.sample}\t${row.fastq_1}\t${row.fastq_2}\t${row.strandedness}"} // this view line is just to know if the readin worked.
     }
 
     // Task 2 - Read in the samplesheet and create a meta-map with all metadata and another list with the filenames ([[metadata_1 : metadata_1, ...], [fastq_1, fastq_2]]).
