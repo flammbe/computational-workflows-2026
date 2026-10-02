@@ -81,6 +81,7 @@ process PRINTUPPER {
 
 process ZIP {
     debug true
+    stageInMode 'copy' // necessary to copy file in work dir, simlink is not enough, since we wnat to zip it.
 
     publishDir 'results', mode: 'copy'
 
@@ -88,17 +89,30 @@ process ZIP {
     path hello
 
     output:
-    path "${hello.baseName}.zip"
+    path "${params.zip == 'zip' ? hello.baseName + '.zip' : hello.name + (params.zip == 'gzip' ? '.gz' : '.bz2')}"
 
     script:
-    """
-        zip "${hello.baseName}.zip" "$hello"
-    """
+    if(params.zip=='zip'){
+        """
+            zip "${hello.baseName}.zip" "$hello"
+        """
+    }
+    else if(params.zip in ['gzip', 'bzip2']) { // They both use the same format for their work, so same cammand (different tool) can be used.
+        """
+            ${params.zip} -k "$hello"
+        """
+    }
+    else {
+        """
+            echo "Compression format isn't supported" >&2
+            exit 1
+        """
+    }
 }
 
 process ALLZIP {
     debug true
-    stageInMode 'copy' // necessary to copy file in work dir, simlink is not enough, since we wnat to zip it.
+    stageInMode 'copy' 
 
     publishDir 'results', mode: 'copy'
 
@@ -184,7 +198,7 @@ workflow {
         greeting_ch = channel.of("Hello world!")
         out_ch = UPPERCASE(greeting_ch)
         ZIP(out_ch).view()
-    }
+    } 
 
     // Task 8 - Create a process that zips the file created in the UPPERCASE process in "zip", "gzip" AND "bzip2" format. 
     // Print out the paths to the zipped files in the console

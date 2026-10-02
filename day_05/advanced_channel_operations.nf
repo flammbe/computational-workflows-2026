@@ -17,20 +17,61 @@ workflow{
     //          Set the output to a new channel "in_ch" and view the channel. YOU WILL NEED TO COPY AND PASTE THIS CODE INTO SOME OF THE FOLLOWING TASKS (sorry for that).
 
     if (params.step == 2) {
-        
+        in_ch = channel.fromPath('samplesheet.csv')
+            .splitCsv(header: true)
+            .map { row ->
+                [
+                    [sample: row.sample, strandedness: row.strandedness],
+                    [file(row.fastq_1), file(row.fastq_2)]
+                ]
+            }
+        in_ch.view()
     }
 
     // Task 3 - Now we assume that we want to handle different "strandedness" values differently. 
     //          Split the channel into the right amount of channels and write them all to stdout so that we can understand which is which.
 
     if (params.step == 3) {
-        
+        in_ch = channel.fromPath('samplesheet.csv')
+            .splitCsv(header: true)
+            .map { row ->
+                [
+                    [sample: row.sample, strandedness: row.strandedness],
+                    [file(row.fastq_1), file(row.fastq_2)]
+                ]
+            }
+            .branch { record ->
+                auto: record[0].strandedness == 'auto'          // here I split the chanel into 3 subchanels for auto/fwd/rev
+                forward: record[0].strandedness == 'forward'
+                reverse: record[0].strandedness == 'reverse'
+            }.set{stranded_ch}
+
+            stranded_ch.auto.view()
+            stranded_ch.forward.view()
+            stranded_ch.reverse.view()
     }
 
     // Task 4 - Group together all files with the same sample-id and strandedness value.
 
     if (params.step == 4) {
-        
+        in_ch = channel.fromPath('samplesheet.csv')
+            .splitCsv(header: true)
+            .map { row ->
+                [
+                    [sample: row.sample, strandedness: row.strandedness],
+                    [file(row.fastq_1), file(row.fastq_2)]
+                ]
+            }
+            .groupTuple()
+            .branch { record ->
+                auto: record[0].strandedness == 'auto'          // here I split the chanel into 3 subchanels for auto/fwd/rev
+                forward: record[0].strandedness == 'forward'
+                reverse: record[0].strandedness == 'reverse'
+            }.set{stranded_ch}
+
+            stranded_ch.auto.view()
+            stranded_ch.forward.view()
+            stranded_ch.reverse.view()
     }
 
 
